@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import React from "react";
+import { fetchImage185 } from "../api/moviedb";
 
 const Cast = ({ casts, navigation }) => {
   let personName = "john wick";
@@ -17,19 +18,19 @@ const Cast = ({ casts, navigation }) => {
             <TouchableOpacity key={index} className="mr-4 items-center" onPress={() => navigation.navigate('Person', person)}>
               <View className="overflow-hidden rounded-full h-24 w-24 items-center border-2 border-neutral-500">
                 <Image
-                  source={require("../assets/images/demo/charec.jpg")}
+                  source={{uri: fetchImage185(person.profile_path)}}
                   className="h-28 w-24 rounded-2xl"
                 />
               </View>
               <Text className="text-white text-xs mt-1">
-                {charecterName.length > 10
-                  ? charecterName.slice(0, 10) + "..."
-                  : charecterName}
+                {person.original_name?.length > 10
+                  ? person.original_name.slice(0, 10) + "..."
+                  : person.original_name}
               </Text>
               <Text className="text-neutral-400 text-xs mt-1">
-                {personName.length > 10
-                  ? personName.slice(0, 10) + "..."
-                  : personName}
+                {person.character?.length > 10
+                  ? person.character.slice(0, 10) + "..."
+                  : person.character}
               </Text>
             </TouchableOpacity>
           ))}

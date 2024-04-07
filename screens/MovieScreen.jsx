@@ -17,6 +17,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import Cast from "../components/cast";
 import MovieList from "../components/movieList";
 import Loader from "../components/Loading";
+import {
+  fetchMovieCredits,
+  fetchMovieDetails,
+  fetchSimilarMovies,
+  Image500,
+} from "../api/moviedb";
 
 var { width, height } = Dimensions.get("window");
 const ios = Platform.OS == "ios";
@@ -26,12 +32,37 @@ const MovieScreen = () => {
   const { params: item } = useRoute();
   const navigation = useNavigation();
   const [isFav, setFav] = useState(false);
-  const [casts, setCasts] = useState([1, 2, 3, 4, 5]);
-  const [similarMovies, setSimilarMovies] = useState([1, 2, 3, 4, 5]);
+  const [casts, setCasts] = useState([]);
+  const [similarMovies, setSimilarMovies] = useState([]);
   const [loading, setLoading] = useState(false);
   let movieName = "Doctor Strange in the Multiverse of Madness";
+  const [movie, setMovie] = useState({});
 
-  useEffect(() => {}, [item]);
+  useEffect(() => {
+    setLoading(true);
+    getMovieDetails(item.id);
+    getMovieCredits(item.id);
+    getSimilarMovies(item.id);
+  }, [item]);
+
+  const getMovieDetails = async (id) => {
+    const data = await fetchMovieDetails(id);
+    setMovie(data);
+    setLoading(false);
+  };
+
+  const getMovieCredits = async (id) => {
+    const data = await fetchMovieCredits(id);
+    setCasts(data?.cast);
+    setLoading(false);
+  };
+
+  const getSimilarMovies = async (id) => {
+    const data = await fetchSimilarMovies(id);
+    setSimilarMovies(data?.results);
+    setLoading(false);
+  };
+
   return (
     <ScrollView
       contentContainerStyle={{ paddingBottom: 20 }}
@@ -67,7 +98,7 @@ const MovieScreen = () => {
         ) : (
           <View>
             <Image
-              source={require("../assets/images/demo/avengers.jpeg")}
+              source={{ uri: Image500(movie?.poster_path) }}
               style={{ width: width, height: height * 0.55 }}
             />
             <LinearGradient
@@ -88,39 +119,38 @@ const MovieScreen = () => {
       {/* Movie Details */}
       <View style={{ marginTop: -(height * 0.1) }} className="space-y-3">
         <Text className="text-white text-center text-3xl font-bold tracking-wider">
-          {movieName}
+          {movie?.title}
         </Text>
         {/* stats */}
         <Text className="text-neutral-400 font-semibold text-base text-center">
-          Realeased • 2020 • 170 min
+          {movie?.status} • {movie?.release_date?.split("-")[0]} •{" "}
+          {movie?.runtime} min
         </Text>
         {/* geners */}
         <View className="flex-row justify-center mx-4 space-x-2">
-          <Text className="text-neutral-400 font-semibold text-base text-center">
-            Action •
-          </Text>
-          <Text className="text-neutral-400 font-semibold text-base text-center">
-            Thrill •
-          </Text>
-          <Text className="text-neutral-400 font-semibold text-base text-center">
-            Comedy
-          </Text>
+          {movie?.genres?.map((genre, index) => (
+            <Text
+              key={genre.id}
+              className="text-neutral-400 font-semibold text-base text-center"
+            >
+              {genre.name} •
+            </Text>
+          ))}
         </View>
         {/* description */}
         <Text className="text-neutral-400 mx-4 tracking-wide">
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic, voluptas
-          fuga soluta temporibus architecto exercitationem quaerat libero
-          expedita? Eos, magni. Lorem ipsum dolor sit amet consectetur,
-          adipisicing elit. Optio, magnam.
+          {movie?.overview}
         </Text>
         {/* cast */}
-        <Cast navigation={navigation} casts={casts} />
+        {casts.length > 0 && <Cast navigation={navigation} casts={casts} />}
         {/* similar Movies */}
-        <MovieList
-          title="Similar Movies"
-          hideSeeAll={true}
-          data={similarMovies}
-        />
+        {similarMovies.length > 0 && (
+          <MovieList
+            title="Similar Movies"
+            hideSeeAll={true}
+            data={similarMovies}
+          />
+        )}
       </View>
     </ScrollView>
   );

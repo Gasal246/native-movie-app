@@ -9,10 +9,12 @@ import {
   TouchableWithoutFeedback,
   Image,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { XMarkIcon } from "react-native-heroicons/outline";
 import { useNavigation } from "@react-navigation/native";
 import Loader from "../components/Loading";
+import { fetchQueryMovie, Image500 } from "../api/moviedb";
+import { debounce } from "lodash";
 
 var { width, height } = Dimensions.get("window");
 
@@ -21,10 +23,23 @@ const Searchscreen = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   let movieName = "Doctor Strange in the Multiverse of Madness";
+
+  async function fetchMovies(query) {
+    if(query && query.length > 3){
+      setLoading(true)
+      const data = await fetchQueryMovie(query);
+      setResults(data?.results)
+      setLoading(false)
+    }
+  }
+
+  const handleTextDebounce = useCallback(debounce(fetchMovies, 400), [])
+
   return (
     <SafeAreaView className="flex-1 bg-neutral-800">
       <View className="mx-4 my-3 flex-row justify-between items-center border border-neutral-500 rounded-full">
         <TextInput
+        onChangeText={handleTextDebounce}
           placeholder="search movie"
           placeholderTextColor="lightgray"
           className="pl-6 flex-1 font-semibold text-white tracking-wider"
@@ -45,27 +60,27 @@ const Searchscreen = () => {
           className="space-y-3"
         >
           <Text className="text-white font-semibold ml-1">
-            Results ({results.length}){" "}
+            Results ({results?.length}){" "}
           </Text>
           <View className="flex-row justify-between flex-wrap">
             {results.map((item, index) => (
               <TouchableWithoutFeedback
-                key={index}
-                onPress={() => navigation.push("Movie", index)}
+                key={item?.id}
+                onPress={() => navigation.push("Movie", item)}
               >
                 <View className="space-y-2 mb-4">
                   <Image
                     className="rounded-3xl"
-                    source={require("../assets/images/demo/avengers.jpeg")}
+                    source={{uri: Image500(item?.poster_path)}}
                     style={{
                       width: width * 0.44,
                       height: height * 0.3,
                     }}
                   />
                   <Text className="text-neutral-300 ml-1">
-                    {movieName.length > 22
-                      ? movieName.slice(0, 23) + "..."
-                      : movieName}
+                    {item?.title?.length > 22
+                      ? item?.title.slice(0, 23) + "..."
+                      : item?.title}
                   </Text>
                 </View>
               </TouchableWithoutFeedback>
